@@ -1,0 +1,5 @@
+(define (isPrimeHelper startNumber currentNumber) (if (= (remainder startNumber currentNumber) 0) "Not prime" (if (= currentNumber (quotient startNumber 2)) "Prime" (isPrimeHelper startNumber (+ currentNumber 1)) )) )
+
+(define (isPrime startNumber) (if (or (= startNumber 2) (= startNumber 3)) "Prime" (isPrimeHelper startNumber 2)) )
+
+(isPrime 19)
