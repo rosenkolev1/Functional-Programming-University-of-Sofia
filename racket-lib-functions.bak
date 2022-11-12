@@ -1,0 +1,34 @@
+;#lang racket
+
+(define (accumulate op nv a b term next)
+  (if (> a b) nv
+      (op (term a)
+          (accumulate op nv (next a) b term next))))
+
+(define (accumulate-i op nv a b term next)
+    (if (> a b) nv
+        (accumulate-i op (op nv (term a)) (next a) b term next)))
+
+(define (foldr op acc lst)
+  (if (null? lst)
+      acc
+      (op (car lst) (foldr op acc (cdr lst)))))
+
+(define (foldl op acc lst)
+  (if (null? lst)
+    acc
+    (foldl op (op (car lst) acc) (cdr lst))))
+
+(define (filter p lst)
+  (if (null? lst)
+      (list)
+      (if (p (car lst))
+          (cons (car lst) (filter p (cdr lst)))
+          (filter p (cdr lst)))))
+
+;(apply + '(1 2 3))
+;(map (lambda (x) (+ x 1)) '(1 2 3))
+;(filter (lambda (x) (< x 5)) '(1 2 3 4 5 6 7))
+;(foldl (lambda (x acc) (- x acc)) 0 '(1 2 3 4) )
+;(foldr (lambda (x acc) (- x acc)) 0 '(1 2 3 4) )
+

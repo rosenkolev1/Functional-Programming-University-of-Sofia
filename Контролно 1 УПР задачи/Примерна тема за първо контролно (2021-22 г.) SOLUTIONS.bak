@@ -1,0 +1,178 @@
+;#lang racket
+
+(define (accumulate op nv a b term next)
+  (if (> a b) nv
+      (op (term a)
+          (accumulate op nv (next a) b term next))))
+
+(define (accumulate-i op nv a b term next)
+    (if (> a b) nv
+        (accumulate-i op (op nv (term a)) (next a) b term next)))
+
+(define (foldr op acc lst)
+  (if (null? lst)
+      acc
+      (op (car lst) (foldr op acc (cdr lst)))))
+
+(define (foldl op nv l)
+  (if (null? l) nv
+          (foldl op (op nv (car l)) (cdr l))))
+
+(define (filter p lst)
+  (if (null? lst)
+      (list)
+      (if (p (car lst))
+          (cons (car lst) (filter p (cdr lst)))
+          (filter p (cdr lst)))))
+
+(define (foldr1 op l)
+  (if (null? (cdr l)) (car l)
+          (op (car l) (foldr1 op (cdr l)))))
+
+(define (foldl1 op l)
+  (foldl op (car l) (cdr l)))
+
+;(apply + '(1 2 3))
+;(map (lambda (x) (+ x 1)) '(1 2 3))
+;(filter (lambda (x) (< x 5)) '(1 2 3 4 5 6 7))
+;(foldl (lambda (x acc) (- x acc)) 0 '(1 2 3 4) )
+;(foldr (lambda (x acc) (- x acc)) 0 '(1 2 3 4) )
+
+;TASK 0
+
+(define (1+ x) (+ x 1))
+(define (id x) x)
+
+;TASK 1
+
+(define (done? num)
+  (= (accumulate-i
+   (lambda (acc a)
+     (if (= (remainder num a) 0)
+         (+ acc a)
+         acc))
+   0 1 (- num 1) id 1+) (+ num 2)))
+
+
+(define (sum-almost-done a b)
+  
+  (define (closest-done-left x)
+    (accumulate-i
+      (lambda (acc2 x2)
+        (if (and (done? x2) (< (abs (- x2 x)) (abs (- (cdr acc2) x))))
+            (cons #t x2)
+            acc2))
+      (cons #f a) a x id 1+))
+  
+  (define (closest-done-right x)
+    (accumulate-i
+      (lambda (acc2 x2)
+        (if (and (done? x2) (< (abs (- x2 x)) (abs (- (cdr acc2) x))))
+            (cons #t x2)
+            acc2))
+      (cons #f b) x b id 1+))
+  
+  (define (compare-closest x)
+    (let* (    
+          (closest-left (closest-done-left x))
+          (closest-right (closest-done-right x))
+          (left-dist (abs (- x (cdr closest-left))))
+          (right-dist (abs (- x (cdr closest-right)))))
+      (cond
+        ((and #t (car closest-left) (car closest-right)) #t)
+        ((not (or #f (car closest-left) (car closest-right))) #f)
+        (else
+         (or
+              (and (car closest-left) (< left-dist right-dist))
+              (and (car closest-right) (< right-dist left-dist)))))))
+    
+  (accumulate-i
+   (lambda (acc x)
+     (if (and #t (compare-closest x))
+         (+ acc x)
+         acc))
+   0 a b id 1+))
+
+;(done? 20) ;→ #t
+;(done? 28) ;→ #f
+;(done? 12) ;-> #f
+
+;(sum-almost-done 5 24) ;→ 153 ; сумата на числата от 13 до 21
+
+;TASK 2
+
+(define (run-machine lst)
+
+  (define (run-machine-helper f n lst2)
+    (if (or (null? (cdr lst2)) (< n 1) (symbol? (cadr lst2)) (symbol? (car lst2)))
+        lst2
+        (run-machine-helper f (- n 1)
+                            (cons (f (car lst2) (cadr lst2)) (cdr (cdr lst2))))))
+
+  (define (run-machine-i stack lst)
+    (cond
+     ((null? lst) stack)
+     ((or (symbol? (car lst)) (number? (car lst))) (run-machine-i (cons (car lst) stack) (cdr lst)))
+     ((procedure? (car lst)) (run-machine-i (map (lambda (x) (if (number? x) ((car lst) x) x)) stack) (cdr lst)))
+     ((pair? (car lst))
+       (run-machine-i (run-machine-helper (car (car lst)) (cdr (car lst)) stack) (cdr lst)))))
+
+  (run-machine-i '() lst))
+
+;TASK 3
+
+(define (is-major? lst)
+  
+  (define (majors? lst1 lst2)
+    
+    (define (majors?-helper lst1 lst2)
+          (if (null? lst1)
+            #t
+            (and (<= (car lst1) (car lst2)) (majors?-helper (cdr lst1) (cdr lst2)))))
+    
+    (if (or (not (= (length lst1) (length lst2))) (null? lst1))
+        #f
+        (majors?-helper lst1 lst2)))
+
+
+  (define (majors?-many lst1 lst-many)
+    (if (null? lst-many)
+        #f
+        (if (majors? lst1 (car lst-many))
+            #t
+            (majors?-many lst1 (cdr lst-many)))))
+
+  (define (get-prefix lst1 n)
+    (if (< n 1) '()
+    (cons (car lst1) (get-prefix (cdr lst1) (- n 1)))))
+
+  (define (get-sublists-i lst1 n start i)
+      (if (= i start)
+          (get-prefix lst1 n)
+          (get-sublists-i (cdr lst1) n start (+ 1 i))))
+  
+  (define (get-sublists lst1 n)
+    (accumulate-i
+     (lambda (acc x)
+       (cons x acc))
+     '() 0 (- (length lst1) n)
+     (lambda (x) (get-sublists-i lst1 n x 0))
+     1+))
+
+  (define (is-major?-helper lst1)
+    (if (null? (cdr lst1))
+        #t
+        (and (majors?-many (car lst1) (get-sublists (cadr lst1) (length (car lst1)))) (is-major?-helper (cdr lst1)))))
+
+  (if (or (null? lst) (null? (car lst)) (null? (cadr lst)))
+        #f
+        (is-major?-helper lst)))
+    
+        
+(is-major? '((1 3) (4 2 7) (2 5 4 3 9 12))) ;→ #t
+(is-major? '((1 3) (4 2 7) (2 5 3 3 9 12))) ;→ #f
+
+;(run-machine '(1 2 3))
+;(run-machine (list 1 'x 4 'a 9 16 25 sqrt 6))                       ;→ (6 5 4 3 a 2 x 1)
+;(run-machine (list 1 'x 4 'a 9 16 25 sqrt 6 (cons + 2) (cons * 5))) ;→ (45 a 2 x 1)
+
