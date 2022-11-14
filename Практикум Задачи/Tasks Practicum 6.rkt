@@ -73,7 +73,7 @@
   (cons (cons key value)
         alist))
 
-(add-assoc 'purpose 42 '()) ; '((purpose . 42))
+;(add-assoc 'purpose 42 '()) ; '((purpose . 42))
 
 ; Ще е хубаво да имаме и функции с които да вземем
 ; само ключовете или само стойностите на списъка
@@ -83,14 +83,22 @@
 ;===============;=========================================
 ;; З А Д А Ч И ;;
 ;;;;;;;;;;;;;;;;;
-
 (define (1+ x) (+ 1 x))
 (define (id x) x)
 
 ; За двоични дървета:
 ;--------------------
 ; 1. Намира броя на листата в tree.
-(define (count-leaves tree) 'undefined)
+(define (count-leaves tree)
+  (if (empty? tree)
+      0
+      (if (leaf? tree)
+          1
+          (+ (count-leaves (left tree)) (count-leaves (right tree))))))
+
+;(count-leaves '(1 (2 () ()) (3 (4 () ()) (7 () ()))))
+;(count-leaves '(1 () ()))
+;(count-leaves '())
 
 ; 2. Връща ново дърво, в което f е приложена над
 ; всеки връх от tree.
@@ -105,10 +113,10 @@
 
 ; 3. Връща списък от всички върхове на разстояние n от
 ; корена на tree.
-(define (append lst1 lst2)
-  (if (empty? lst1)
-      lst2
-      (cons (car lst1) (append (cdr lst1) lst2))))
+;(define (append lst1 lst2)
+;  (if (empty? lst1)
+;      lst2
+;      (cons (car lst1) (append (cdr lst1) lst2))))
 
 (define (level n tree)
   
@@ -118,10 +126,10 @@
           (list (root tree))
           '())))
 
-(level 0 '(5 (4 () ()) (3 (2 () ()) (1 () ())))) ;-> (5)
-(level 1 '(5 (4 () ()) ())) ;-> (4)
-(level 1 '(5 (4 () ()) (3 (2 () ()) (1 () ())))) ;-> (4 3)
-(level 2 '(5 (4 (10 () ()) ()) (3 (2 () ()) (1 () ())))) ;-> (10 2 1)
+;(level 0 '(5 (4 () ()) (3 (2 () ()) (1 () ())))) ;-> (5)
+;(level 1 '(5 (4 () ()) ())) ;-> (4)
+;(level 1 '(5 (4 () ()) (3 (2 () ()) (1 () ())))) ;-> (4 3)
+;(level 2 '(5 (4 (10 () ()) ()) (3 (2 () ()) (1 () ())))) ;-> (10 2 1)
 
 ; Обхождане на дърво, функциите да връщат списък
 ; от върховете в реда на обхождането им:
@@ -183,9 +191,9 @@
           (cdr (car alist))
           (alist-assoc key (cdr alist)))))
 
-(alist-assoc "first" '(("first" . 1) ("second" . 2))) ;-> 1
-(alist-assoc "second" '(("first" . 1) ("second" . 2))) ;-> 1
-(alist-assoc "three" '(("first" . 1) ("second" . 2))) ;-> 1
+;(alist-assoc "first" '(("first" . 1) ("second" . 2))) ;-> 1
+;(alist-assoc "second" '(("first" . 1) ("second" . 2))) ;-> 1
+;(alist-assoc "three" '(("first" . 1) ("second" . 2))) ;-> 1
 
 ; 10. По даден ключ изтрива първата съответстваща двойка
 ; със същия ключ
@@ -196,14 +204,30 @@
           (cdr alist)
           (cons (car alist) (del-assoc key (cdr alist))))))
 
-(del-assoc "first" '(("first" . 1) ("second" . 2))) ;-> '(("second" . 2))
-(del-assoc "second" '(("first" . 1) ("second" . 2))) ;-> '(("first" . 1))
-(del-assoc "third" '(("first" . 1) ("second" . 2))) ;-> '(("first" . 1) ("second" . 2))
+;(del-assoc "first" '(("first" . 1) ("second" . 2))) ;-> '(("second" . 2))
+;(del-assoc "second" '(("first" . 1) ("second" . 2))) ;-> '(("first" . 1))
+;(del-assoc "third" '(("first" . 1) ("second" . 2))) ;-> '(("first" . 1) ("second" . 2))
 
 ; 11. Връща списък от списъци (result . args),
 ; където args са точно тези елементи x от lst,
 ; за които f(x) = result
-;(define (group-by* f lst)
-;  (if (empty? lst)
-;      '()
-;      (if (equal result (car )))))
+(define (group-by* f lst)
+  (foldr
+   (lambda (el acc)
+     (if (member (f el) (alist-keys acc))
+         (foldl
+          (lambda (kv acc1)
+            (let* ((key (car kv))
+                   (value (car (cdr kv)))
+                   (newValue (list (append (list el) value))))
+              (if (= (car kv) (f el))
+                (append acc1 (list (cons key newValue)))
+                (append acc1 (list kv)))))
+          '() acc)
+         (add-assoc (f el) (list (list el)) acc)))
+     '() lst))
+
+;(list (cons 1 (list '(10 20))) (cons 2 (list '(2 3))) (cons 3 (list '(4 5))))
+
+(group-by* 1+ '(4 3 2 4 5 3 2 4 5 5 5)) ;-> ((5 . (4 4 4)) (4 . (3 3)) (3 . (2 2)) (6 . (5 5 5 5)))
+  
