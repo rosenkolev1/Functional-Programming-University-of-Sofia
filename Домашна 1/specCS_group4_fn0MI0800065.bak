@@ -1,4 +1,4 @@
-#lang racket
+;#lang racket
 
 (define (accumulate op nv a b term next)
   (if (> a b) nv
@@ -56,6 +56,7 @@
    1+))
 
 (best-pair 16 20) ;-> (16 . 20) ; или (17 . 19), но не и (18 . 18) :)
+(best-pair 10 16) ;-> (11 . 13)
 
 ;TASK 3
 (define (integrate2 f a b c d dx dy)
@@ -70,7 +71,7 @@
              (lambda (x) (+ x dx)))))
    0 c d
    id
-   (lambda (y) (+ y dx))))
+   (lambda (y) (+ y dy))))
 
 ;(lambda (y) (* y dy))
 
@@ -124,4 +125,4 @@
 (n-rooks board2 5); -> #f
 (n-rooks board3 5); -> #f
 (n-rooks board4 5); -> #t
-(n-rooks board5 5); -> #t
+(n-rooks board5 5); -> #f

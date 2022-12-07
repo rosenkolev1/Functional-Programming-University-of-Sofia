@@ -71,7 +71,7 @@
              (lambda (x) (+ x dx)))))
    0 c d
    id
-   (lambda (y) (+ y dx))))
+   (lambda (y) (+ y dy))))
 
 ;(lambda (y) (* y dy))
 
